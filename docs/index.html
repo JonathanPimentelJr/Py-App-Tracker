@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Py-App-Tracker - Job Application Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            color: #764ba2;
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            margin: 0 0.5rem;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card h2 {
+            color: #764ba2;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .card li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .card li:before {
+            content: "✅ ";
+            margin-right: 0.5rem;
+        }
+        
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .tech-item {
+            background: #667eea;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn {
+            display: inline-block;
+            background: #764ba2;
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: background 0.3s ease, transform 0.3s ease;
+            margin: 0.5rem;
+        }
+        
+        .btn:hover {
+            background: #5a3d7a;
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #764ba2;
+            color: #764ba2;
+        }
+        
+        .btn-outline:hover {
+            background: #764ba2;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Py-App-Tracker</h1>
+            <p>Professional Job Application Management System</p>
+            <div>
+                <span class="badge">Open Source</span>
+                <span class="badge">Free</span>
+                <span class="badge">Python</span>
+                <span class="badge">Flask</span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="card">
+                <h2>🚀 Key Features</h2>
+                <ul>
+                    <li>Real-time job search integration</li>
+                    <li>Application status tracking</li>
+                    <li>Analytics and insights</li>
+                    <li>One-click job applications</li>
+                    <li>Multiple API integrations</li>
+                    <li>Export functionality</li>
+                    <li>Mobile-responsive design</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h2>🔍 Job Search APIs</h2>
+                <ul>
+                    <li>USAJobs.gov (Free)</li>
+                    <li>Adzuna API (Free Tier)</li>
+                    <li>JSearch API (Premium)</li>
+                    <li>Smart fallback system</li>
+                    <li>Multi-source aggregation</li>
+                    <li>Rate limit handling</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h2>💻 Tech Stack</h2>
+                <div class="tech-stack">
+                    <span class="tech-item">Python 3.13</span>
+                    <span class="tech-item">Flask</span>
+                    <span class="tech-item">Bootstrap 5</span>
+                    <span class="tech-item">SQLite</span>
+                    <span class="tech-item">RESTful APIs</span>
+                    <span class="tech-item">JSON</span>
+                    <span class="tech-item">HTML5</span>
+                    <span class="tech-item">CSS3</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>📊 Analytics</h2>
+                <ul>
+                    <li>Response rate tracking</li>
+                    <li>Company statistics</li>
+                    <li>Weekly trends</li>
+                    <li>Application insights</li>
+                    <li>Stale application alerts</li>
+                    <li>Performance metrics</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <h2>🎉 Get Started Today</h2>
+            <p>Transform your job search with professional application tracking</p>
+            <div style="margin: 2rem 0;">
+                <a href="https://github.com/JonathanPimentelJr/Py-App-Tracker" class="btn">
+                    📁 View on GitHub
+                </a>
+                <a href="https://github.com/JonathanPimentelJr/Py-App-Tracker/releases" class="btn btn-outline">
+                    ⬇️ Download
+                </a>
+            </div>
+            
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
+                <h3>🔗 Quick Links</h3>
+                <p>
+                    <a href="https://github.com/JonathanPimentelJr/Py-App-Tracker/blob/main/README.md" style="margin: 0 1rem;">Documentation</a>
+                    <a href="https://github.com/JonathanPimentelJr/Py-App-Tracker/blob/main/API_SETUP.md" style="margin: 0 1rem;">API Setup Guide</a>
+                    <a href="https://github.com/JonathanPimentelJr/Py-App-Tracker/issues" style="margin: 0 1rem;">Support</a>
+                </p>
+                
+                <div style="margin-top: 2rem; font-size: 0.9rem; color: #666;">
+                    <p><strong>Contact:</strong> For API integrations and partnerships</p>
+                    <p><strong>License:</strong> MIT License</p>
+                    <p><strong>Version:</strong> 2.0.0 with API Integration</p>
+                    <p><strong>Last Updated:</strong> September 2025</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Add some interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scrolling for anchor links
+            const links = document.querySelectorAll('a[href^="#"]');
+            for (const link of links) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            }
+            
+            // Add loading animation to external links
+            const externalLinks = document.querySelectorAll('a[href^="https://github.com"]');
+            for (const link of externalLinks) {
+                link.addEventListener('click', function() {
+                    this.innerHTML = '⏳ Loading...';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
