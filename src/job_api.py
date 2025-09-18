@@ -85,6 +85,252 @@ class JobSearchAPI:
         raise NotImplementedError
 
 
+class AdzunaAPI(JobSearchAPI):
+    """Adzuna API implementation - Free tier available."""
+    
+    def __init__(self, app_id: Optional[str] = None, api_key: Optional[str] = None):
+        """Initialize Adzuna API client."""
+        self.app_id = app_id or os.getenv('ADZUNA_APP_ID')
+        self.api_key = api_key or os.getenv('ADZUNA_API_KEY')
+        self.base_url = "https://api.adzuna.com/v1/api"
+        
+        if not self.app_id or not self.api_key:
+            logger.warning("No Adzuna API credentials found. Set ADZUNA_APP_ID and ADZUNA_API_KEY environment variables.")
+    
+    def search_jobs(self, query: str, location: str = "", limit: int = 10) -> List[JobPosting]:
+        """Search for jobs using Adzuna API."""
+        if not self.app_id or not self.api_key:
+            logger.error("No API credentials available for Adzuna job search")
+            return []
+        
+        try:
+            # Adzuna uses country-specific endpoints
+            country = "us"  # Default to US, could be configurable
+            
+            params = {
+                "app_id": self.app_id,
+                "app_key": self.api_key,
+                "results_per_page": min(limit, 50),
+                "what": query,
+                "content-type": "application/json"
+            }
+            
+            if location:
+                params["where"] = location
+            
+            response = requests.get(
+                f"{self.base_url}/jobs/{country}/search/1",
+                params=params,
+                timeout=10
+            )
+            
+            response.raise_for_status()
+            data = response.json()
+            
+            jobs = []
+            results = data.get("results", [])
+            
+            for job in results:
+                try:
+                    job_posting = self._parse_adzuna_job(job)
+                    if job_posting:
+                        jobs.append(job_posting)
+                except Exception as e:
+                    logger.warning(f"Error parsing Adzuna job data: {e}")
+                    continue
+            
+            return jobs
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Adzuna API request failed: {e}")
+            raise JobAPIError(f"Failed to search jobs: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error during Adzuna job search: {e}")
+            raise JobAPIError(f"Job search failed: {e}")
+    
+    def get_job_details(self, job_id: str) -> Optional[JobPosting]:
+        """Get detailed job information from Adzuna."""
+        # Adzuna doesn't have a separate job details endpoint
+        # The search results already contain detailed information
+        return None
+    
+    def _parse_adzuna_job(self, job_data: Dict[str, Any]) -> Optional[JobPosting]:
+        """Parse job data from Adzuna API response."""
+        try:
+            # Extract salary information
+            salary_min = job_data.get("salary_min")
+            salary_max = job_data.get("salary_max")
+            
+            # Parse created date
+            posted_date = None
+            if job_data.get("created"):
+                try:
+                    posted_date = datetime.fromisoformat(job_data["created"].replace('Z', '+00:00'))
+                except:
+                    pass
+            
+            # Extract location info
+            location_parts = []
+            area = job_data.get("location", {})
+            if isinstance(area, dict):
+                if area.get("display_name"):
+                    location_parts.append(area["display_name"])
+            else:
+                location_parts.append(str(area))
+            
+            location = ", ".join(filter(None, location_parts))
+            
+            # Extract company info
+            company = job_data.get("company", {}).get("display_name", "Unknown Company")
+            
+            return JobPosting(
+                job_id=str(job_data.get("id", "")),
+                title=job_data.get("title", ""),
+                company=company,
+                location=location,
+                description=job_data.get("description", ""),
+                job_url=job_data.get("redirect_url", ""),
+                salary_min=salary_min,
+                salary_max=salary_max,
+                salary_currency="USD",
+                employment_type=job_data.get("contract_type", ""),
+                remote=False,  # Adzuna doesn't clearly indicate remote
+                posted_date=posted_date,
+                source="Adzuna",
+                requirements=[],
+                benefits=[]
+            )
+            
+        except Exception as e:
+            logger.error(f"Error parsing Adzuna job data: {e}")
+            return None
+
+
+class USAJobsAPI(JobSearchAPI):
+    """USAJobs.gov API implementation - Completely free for US government jobs."""
+    
+    def __init__(self, email: Optional[str] = None):
+        """Initialize USAJobs API client."""
+        self.email = email or os.getenv('USAJOBS_EMAIL') or "user@example.com"
+        self.base_url = "https://data.usajobs.gov/api"
+        self.headers = {
+            "User-Agent": f"PyAppTracker/1.0 ({self.email})",
+            "Host": "data.usajobs.gov",
+            "Accept": "application/json"
+        }
+    
+    def search_jobs(self, query: str, location: str = "", limit: int = 10) -> List[JobPosting]:
+        """Search for jobs using USAJobs API."""
+        try:
+            params = {
+                "Keyword": query,
+                "ResultsPerPage": min(limit, 500),
+                "Page": 1
+            }
+            
+            if location:
+                params["LocationName"] = location
+            
+            response = requests.get(
+                f"{self.base_url}/search",
+                headers=self.headers,
+                params=params,
+                timeout=10
+            )
+            
+            response.raise_for_status()
+            data = response.json()
+            
+            jobs = []
+            results = data.get("SearchResult", {}).get("SearchResultItems", [])
+            
+            for item in results:
+                try:
+                    job_data = item.get("MatchedObjectDescriptor", {})
+                    job_posting = self._parse_usajobs_data(job_data)
+                    if job_posting:
+                        jobs.append(job_posting)
+                except Exception as e:
+                    logger.warning(f"Error parsing USAJobs data: {e}")
+                    continue
+            
+            return jobs
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"USAJobs API request failed: {e}")
+            raise JobAPIError(f"Failed to search jobs: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error during USAJobs search: {e}")
+            raise JobAPIError(f"Job search failed: {e}")
+    
+    def get_job_details(self, job_id: str) -> Optional[JobPosting]:
+        """Get detailed job information from USAJobs."""
+        # USAJobs search already provides detailed information
+        return None
+    
+    def _parse_usajobs_data(self, job_data: Dict[str, Any]) -> Optional[JobPosting]:
+        """Parse job data from USAJobs API response."""
+        try:
+            # Extract salary information
+            salary_min = None
+            salary_max = None
+            
+            position_remuneration = job_data.get("PositionRemuneration", [])
+            if position_remuneration:
+                salary_info = position_remuneration[0]
+                salary_min = salary_info.get("MinimumRange")
+                salary_max = salary_info.get("MaximumRange")
+            
+            # Parse dates
+            posted_date = None
+            if job_data.get("PublicationStartDate"):
+                try:
+                    posted_date = datetime.fromisoformat(
+                        job_data["PublicationStartDate"].replace('Z', '+00:00')
+                    )
+                except:
+                    pass
+            
+            # Extract location
+            locations = job_data.get("PositionLocation", [])
+            location_parts = []
+            for loc in locations[:2]:  # Take first 2 locations
+                city = loc.get("CityName", "")
+                state = loc.get("StateCode", "")
+                if city and state:
+                    location_parts.append(f"{city}, {state}")
+            
+            location = "; ".join(location_parts) or "USA"
+            
+            # Check for remote work
+            remote = any(
+                loc.get("CityName", "").lower() in ["anywhere", "remote", "telework"]
+                for loc in locations
+            )
+            
+            return JobPosting(
+                job_id=job_data.get("PositionID", ""),
+                title=job_data.get("PositionTitle", ""),
+                company=job_data.get("OrganizationName", "US Government"),
+                location=location,
+                description=job_data.get("UserArea", {}).get("Details", {}).get("MajorDuties", [""])[0] if job_data.get("UserArea", {}).get("Details", {}).get("MajorDuties") else job_data.get("QualificationSummary", ""),
+                job_url=job_data.get("ApplyURI", [""])[0] if job_data.get("ApplyURI") else "",
+                salary_min=salary_min,
+                salary_max=salary_max,
+                salary_currency="USD",
+                employment_type="Full-time",
+                remote=remote,
+                posted_date=posted_date,
+                source="USAJobs.gov",
+                requirements=job_data.get("QualificationSummary", "").split("\n")[:3] if job_data.get("QualificationSummary") else [],
+                benefits=["Federal Benefits Package", "Health Insurance", "Retirement Plan"]
+            )
+            
+        except Exception as e:
+            logger.error(f"Error parsing USAJobs data: {e}")
+            return None
+
+
 class JSearchAPI(JobSearchAPI):
     """JSearch API implementation (RapidAPI)."""
     
@@ -325,33 +571,118 @@ class MockJobAPI(JobSearchAPI):
 class JobAPIService:
     """Main service class for job API operations."""
     
-    def __init__(self, use_mock: bool = False):
-        """Initialize job API service."""
+    def __init__(self, use_mock: bool = False, preferred_api: str = "auto"):
+        """Initialize job API service with multiple API support."""
         self.use_mock = use_mock
+        self.apis = []
+        self.current_api = None
         
-        if use_mock or not os.getenv('RAPIDAPI_KEY'):
+        if use_mock:
             logger.info("Using mock job API")
-            self.api = MockJobAPI()
+            self.apis = [MockJobAPI()]
         else:
-            logger.info("Using JSearch API")
-            self.api = JSearchAPI()
+            # Initialize APIs in priority order (free first)
+            self._initialize_apis(preferred_api)
+        
+        self.current_api = self.apis[0] if self.apis else MockJobAPI()
+    
+    def _initialize_apis(self, preferred_api: str):
+        """Initialize available APIs in priority order."""
+        available_apis = []
+        
+        # Check USAJobs.gov API (completely free)
+        try:
+            usa_api = USAJobsAPI()
+            available_apis.append(('usajobs', usa_api))
+            logger.info("✅ USAJobs.gov API initialized (Free)")
+        except Exception as e:
+            logger.warning(f"USAJobs API initialization failed: {e}")
+        
+        # Check Adzuna API (free tier)
+        if os.getenv('ADZUNA_APP_ID') and os.getenv('ADZUNA_API_KEY'):
+            try:
+                adzuna_api = AdzunaAPI()
+                available_apis.append(('adzuna', adzuna_api))
+                logger.info("✅ Adzuna API initialized (Free Tier)")
+            except Exception as e:
+                logger.warning(f"Adzuna API initialization failed: {e}")
+        
+        # Check JSearch API (RapidAPI - paid)
+        if os.getenv('RAPIDAPI_KEY'):
+            try:
+                jsearch_api = JSearchAPI()
+                available_apis.append(('jsearch', jsearch_api))
+                logger.info("✅ JSearch API initialized (RapidAPI)")
+            except Exception as e:
+                logger.warning(f"JSearch API initialization failed: {e}")
+        
+        # Sort APIs based on preference
+        if preferred_api != "auto" and preferred_api:
+            # Move preferred API to front
+            available_apis.sort(key=lambda x: x[0] != preferred_api)
+        
+        self.apis = [api for _, api in available_apis]
+        
+        # Fallback to mock if no APIs available
+        if not self.apis:
+            logger.warning("No external APIs available, using mock data")
+            self.apis = [MockJobAPI()]
     
     def search_jobs(self, query: str, location: str = "", limit: int = 10) -> List[JobPosting]:
-        """Search for jobs."""
-        try:
-            return self.api.search_jobs(query, location, limit)
-        except Exception as e:
-            logger.error(f"Job search failed, falling back to mock data: {e}")
+        """Search for jobs using multiple APIs with fallback."""
+        all_jobs = []
+        jobs_per_api = max(1, limit // len(self.apis)) if len(self.apis) > 1 else limit
+        
+        for i, api in enumerate(self.apis):
+            try:
+                api_name = api.__class__.__name__
+                logger.info(f"Trying {api_name} for job search...")
+                
+                jobs = api.search_jobs(query, location, jobs_per_api)
+                if jobs:
+                    all_jobs.extend(jobs)
+                    logger.info(f"✅ {api_name} returned {len(jobs)} jobs")
+                    
+                    # If we have enough jobs, we can stop here
+                    if len(all_jobs) >= limit:
+                        break
+                else:
+                    logger.warning(f"⚠️ {api_name} returned no jobs")
+                    
+            except Exception as e:
+                api_name = api.__class__.__name__
+                logger.error(f"❌ {api_name} failed: {e}")
+                continue
+        
+        # If no external APIs worked, try mock as final fallback
+        if not all_jobs and not isinstance(self.current_api, MockJobAPI):
+            logger.warning("All external APIs failed, falling back to mock data")
             mock_api = MockJobAPI()
-            return mock_api.search_jobs(query, location, limit)
+            try:
+                all_jobs = mock_api.search_jobs(query, location, limit)
+            except Exception as e:
+                logger.error(f"Even mock API failed: {e}")
+                return []
+        
+        # Return up to the requested limit
+        return all_jobs[:limit]
     
     def get_job_details(self, job_id: str) -> Optional[JobPosting]:
-        """Get job details."""
-        try:
-            return self.api.get_job_details(job_id)
-        except Exception as e:
-            logger.error(f"Failed to get job details: {e}")
-            return None
+        """Get job details from multiple APIs."""
+        for api in self.apis:
+            try:
+                api_name = api.__class__.__name__
+                job = api.get_job_details(job_id)
+                if job:
+                    logger.info(f"✅ {api_name} returned job details")
+                    return job
+            except Exception as e:
+                api_name = api.__class__.__name__
+                logger.error(f"❌ {api_name} failed to get job details: {e}")
+                continue
+        
+        logger.error(f"Failed to get job details for ID: {job_id}")
+        return None
     
     def job_to_application_data(self, job: JobPosting) -> Dict[str, Any]:
         """Convert job posting to application data format."""
@@ -365,6 +696,35 @@ class JobAPIService:
             'job_posting_id': job.job_id,
             'job_posting_source': job.source
         }
+    
+    def get_api_status(self) -> Dict[str, Any]:
+        """Get status of all configured APIs."""
+        status = {
+            'total_apis': len(self.apis),
+            'current_api': self.current_api.__class__.__name__,
+            'available_apis': [],
+            'recommendations': []
+        }
+        
+        for api in self.apis:
+            api_info = {
+                'name': api.__class__.__name__,
+                'type': 'Mock' if isinstance(api, MockJobAPI) else 'External',
+                'cost': 'Free' if isinstance(api, (USAJobsAPI, MockJobAPI)) else 'Free Tier' if isinstance(api, AdzunaAPI) else 'Paid'
+            }
+            status['available_apis'].append(api_info)
+        
+        # Add recommendations
+        if not any(isinstance(api, USAJobsAPI) for api in self.apis):
+            status['recommendations'].append("Consider using USAJobs.gov API (completely free for US government jobs)")
+        
+        if not any(isinstance(api, AdzunaAPI) for api in self.apis):
+            status['recommendations'].append("Consider signing up for Adzuna API (free tier available)")
+        
+        if len([api for api in self.apis if not isinstance(api, MockJobAPI)]) == 0:
+            status['recommendations'].append("No external APIs configured. Using mock data only.")
+        
+        return status
 
 
 # Convenience function for easy import

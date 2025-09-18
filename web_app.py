@@ -536,6 +536,16 @@ def api_job_search():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/status')
+def api_status():
+    """API endpoint to check job search API status."""
+    try:
+        job_service = get_job_service()
+        status = job_service.get_api_status()
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/export')
 def export_data():
     """Export applications as JSON."""

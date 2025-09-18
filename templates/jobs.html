@@ -195,6 +195,24 @@
     </div>
 {% endif %}
 
+<!-- API Status Info -->
+{% if query %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info border-0" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <div>
+                    <strong>Job Sources:</strong> 
+                    Results from USAJobs.gov (free), Adzuna (free tier), and other configured APIs.
+                    <a href="/api/status" target="_blank" class="ms-2">Check API Status</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Features Info -->
 <div class="row mt-5">
     <div class="col-12">
