@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ application.company }} - {{ application.position }} - Py-App-Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 mb-0">
+        <i class="bi bi-pencil me-2"></i>Edit Application
+    </h1>
+    <div>
+        <a href="{{ url_for('view_application', app_id=application.id) }}" class="btn btn-outline-info me-2">
+            <i class="bi bi-eye me-1"></i>View
+        </a>
+        <a href="{{ url_for('applications') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Applications
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>{{ application.company }} - {{ application.position }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    <div class="row">
+                        <!-- Required Fields -->
+                        <div class="col-md-6 mb-3">
+                            <label for="company" class="form-label">Company <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="company" name="company" required
+                                   value="{{ request.form.get('company', application.company) }}">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="position" class="form-label">Position <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="position" name="position" required
+                                   value="{{ request.form.get('position', application.position) }}">
+                        </div>
+                        
+                        <!-- Status -->
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                {% for status in all_statuses %}
+                                    <option value="{{ status.value }}" 
+                                            {{ 'selected' if request.form.get('status', application.status.value) == status.value }}>
+                                        {{ status.value.replace('_', ' ').title() }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="application_date" class="form-label">Application Date</label>
+                            <input type="date" class="form-control" id="application_date" name="application_date" disabled
+                                   value="{{ application.application_date.strftime('%Y-%m-%d') if application.application_date else '' }}">
+                            <div class="form-text">Application date cannot be changed after creation</div>
+                        </div>
+                        
+                        <!-- Job Details -->
+                        <div class="col-md-6 mb-3">
+                            <label for="location" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="location" name="location"
+                                   value="{{ request.form.get('location', application.location or '') }}">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="salary_range" class="form-label">Salary Range</label>
+                            <input type="text" class="form-control" id="salary_range" name="salary_range"
+                                   value="{{ request.form.get('salary_range', application.salary_range or '') }}">
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <label for="job_url" class="form-label">Job Posting URL</label>
+                            <input type="url" class="form-control" id="job_url" name="job_url"
+                                   value="{{ request.form.get('job_url', application.job_url or '') }}">
+                        </div>
+                        
+                        <!-- Contact Information -->
+                        <div class="col-md-6 mb-3">
+                            <label for="contact_person" class="form-label">Contact Person</label>
+                            <input type="text" class="form-control" id="contact_person" name="contact_person"
+                                   value="{{ request.form.get('contact_person', application.contact_person or '') }}">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="contact_email" class="form-label">Contact Email</label>
+                            <input type="email" class="form-control" id="contact_email" name="contact_email"
+                                   value="{{ request.form.get('contact_email', application.contact_email or '') }}">
+                        </div>
+                        
+                        <!-- Notes -->
+                        <div class="col-12 mb-4">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="6">{{ request.form.get('notes', application.notes or '') }}</textarea>
+                            <div class="form-text">
+                                Use notes to track interview feedback, follow-ups, and other important information
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-check-circle me-1"></i>Save Changes
+                            </button>
+                            <a href="{{ url_for('view_application', app_id=application.id) }}" class="btn btn-outline-secondary me-2">
+                                <i class="bi bi-x me-1"></i>Cancel
+                            </a>
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <i class="bi bi-trash me-1"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Current Status -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Current Status
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <span class="badge bg-{{ get_status_color_class(application.status) }} status-badge mb-3" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    {{ application.status.value.replace('_', ' ').title() }}
+                </span>
+                <p class="text-muted small mb-0">
+                    Last updated: {{ application.updated_at.strftime('%B %d, %Y at %I:%M %p') }}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Status Workflow -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-arrow-right-circle me-2"></i>Typical Workflow
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="workflow">
+                    <div class="workflow-step {{ 'active' if application.status.value == 'applied' else ('completed' if application.status.value in ['screening', 'interview_scheduled', 'interviewed', 'offer_received', 'accepted']) }}">
+                        <span class="badge bg-primary status-badge">Applied</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step {{ 'active' if application.status.value == 'screening' else ('completed' if application.status.value in ['interview_scheduled', 'interviewed', 'offer_received', 'accepted']) }}">
+                        <span class="badge bg-info status-badge">Screening</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step {{ 'active' if application.status.value == 'interview_scheduled' else ('completed' if application.status.value in ['interviewed', 'offer_received', 'accepted']) }}">
+                        <span class="badge bg-warning status-badge">Interview Scheduled</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step {{ 'active' if application.status.value == 'interviewed' else ('completed' if application.status.value in ['offer_received', 'accepted']) }}">
+                        <span class="badge bg-secondary status-badge">Interviewed</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step {{ 'active' if application.status.value == 'offer_received' else ('completed' if application.status.value == 'accepted') }}">
+                        <span class="badge bg-success status-badge">Offer Received</span>
+                    </div>
+                    <div class="workflow-arrow">↓</div>
+                    <div class="workflow-step {{ 'active' if application.status.value == 'accepted' }}">
+                        <span class="badge bg-success status-badge">Accepted</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Status Updates -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Status Updates
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if application.status.value == 'applied' %}
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="updateStatus('screening')">
+                            <i class="bi bi-telephone me-1"></i>Mark as Screening
+                        </button>
+                    {% elif application.status.value == 'screening' %}
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="updateStatus('interview_scheduled')">
+                            <i class="bi bi-calendar-check me-1"></i>Schedule Interview
+                        </button>
+                    {% elif application.status.value == 'interview_scheduled' %}
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="updateStatus('interviewed')">
+                            <i class="bi bi-check-circle me-1"></i>Mark Interviewed
+                        </button>
+                    {% elif application.status.value == 'interviewed' %}
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="updateStatus('offer_received')">
+                            <i class="bi bi-gift me-1"></i>Offer Received
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="updateStatus('rejected')">
+                            <i class="bi bi-x-circle me-1"></i>Rejected
+                        </button>
+                    {% elif application.status.value == 'offer_received' %}
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="updateStatus('accepted')">
+                            <i class="bi bi-check2-all me-1"></i>Accept Offer
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this application?</p>
+                <div class="alert alert-warning">
+                    <strong>{{ application.company }} - {{ application.position }}</strong><br>
+                    This action cannot be undone.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('delete_application', app_id=application.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Delete Application
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.workflow {
+    text-align: center;
+}
+
+.workflow-step {
+    margin: 8px 0;
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+}
+
+.workflow-step.active {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.workflow-step.completed {
+    opacity: 0.7;
+}
+
+.workflow-arrow {
+    color: #6c757d;
+    margin: 5px 0;
+    font-size: 1.2rem;
+}
+
+.status-badge {
+    min-width: 120px;
+    display: inline-block;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateStatus(newStatus) {
+    document.getElementById('status').value = newStatus;
+    
+    // Show a brief highlight animation
+    const statusSelect = document.getElementById('status');
+    statusSelect.style.background = '#fff3cd';
+    setTimeout(() => {
+        statusSelect.style.background = '';
+    }, 1000);
+}
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const company = document.getElementById('company').value.trim();
+    const position = document.getElementById('position').value.trim();
+    
+    if (!company || !position) {
+        e.preventDefault();
+        alert('Company and Position are required fields.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

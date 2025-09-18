@@ -10,6 +10,7 @@ A Python-based command-line application tracker for managing job applications. K
 - **Rich Reporting**: Generate summaries, analytics, and progress reports
 - **Data Persistence**: JSON-based storage with automatic backup
 - **Command-Line Interface**: Intuitive CLI with colored output and formatting
+- **Web Interface**: Modern, responsive web interface with Bootstrap styling
 - **Data Validation**: Built-in validation for emails, URLs, and data integrity
 
 ## Quick Start 🚀
@@ -25,6 +26,7 @@ A Python-based command-line application tracker for managing job applications. K
 
 ### Basic Usage
 
+**Command Line Interface:**
 ```bash
 # Add a new application
 python3 app_tracker.py add "Google" "Software Engineer" --location "Mountain View, CA" --salary "$120k-150k"
@@ -41,6 +43,24 @@ python3 app_tracker.py search "engineer"
 # Update application status
 python3 app_tracker.py update abc12345 --status interviewed --notes "Great technical interview"
 ```
+
+**Web Interface:**
+```bash
+# Install Flask (first time only)
+pip install Flask
+
+# Start the web server
+python3 web_app.py
+
+# Open your browser to http://127.0.0.1:5000
+```
+
+The web interface provides:
+- 📊 **Dashboard** with visual summaries and recent activity
+- 📝 **Easy Forms** for adding and editing applications
+- 🔍 **Advanced Search** with highlighting
+- 📱 **Responsive Design** that works on mobile devices
+- ⚡ **Real-time Updates** and status tracking
 
 ## Command Reference 📖
 
@@ -195,13 +215,22 @@ Py-App-Tracker/
 │   ├── cli.py              # Command-line interface
 │   ├── validators.py        # Data validation utilities
 │   └── reports.py           # Advanced reporting features
+├── templates/
+│   ├── base.html           # Base template with navigation
+│   ├── index.html          # Dashboard with summaries
+│   ├── applications.html   # Application listing with filters
+│   ├── add_application.html # Add new application form
+│   ├── edit_application.html # Edit application form
+│   ├── view_application.html # Detailed application view
+│   └── search.html         # Search interface with highlighting
 ├── data/
 │   └── applications.json    # Application data storage
 ├── tests/
 │   └── (test files)
 ├── venv/                    # Python virtual environment
-├── app_tracker.py          # Main executable script
-├── requirements.txt         # Dependencies (minimal)
+├── app_tracker.py          # CLI executable script
+├── web_app.py              # Flask web application
+├── requirements.txt         # Dependencies (Flask for web interface)
 └── README.md               # This file
 ```
 
@@ -286,6 +315,26 @@ To extend or modify the application:
 2. **Code Structure**: The application uses a modular design with separate modules for models, data handling, CLI, and validation.
 
 3. **Adding Features**: New commands can be added to `src/cli.py`, and new data fields can be added to the `Application` model in `src/models.py`.
+
+### Web Interface Deployment
+
+For production deployment of the web interface:
+
+1. **Production Server**: Use a WSGI server like Gunicorn
+   ```bash
+   pip install gunicorn
+   gunicorn -w 4 -b 0.0.0.0:8000 web_app:app
+   ```
+
+2. **Environment Variables**: Set production configurations
+   ```bash
+   export FLASK_ENV=production
+   export SECRET_KEY=your-secure-secret-key
+   ```
+
+3. **Reverse Proxy**: Use Nginx or Apache for static files and SSL
+
+4. **Process Management**: Use systemd, supervisor, or Docker for process management
 
 ## License 📄
 

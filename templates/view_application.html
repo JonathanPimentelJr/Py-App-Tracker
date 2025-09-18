@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}{{ application.company }} - {{ application.position }} - Py-App-Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 mb-0">
+        <i class="bi bi-eye me-2"></i>{{ application.company }} - {{ application.position }}
+    </h1>
+    <div>
+        <a href="{{ url_for('edit_application', app_id=application.id) }}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <a href="{{ url_for('applications') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Applications
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Application Details -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Application Details
+                </h5>
+                <span class="badge bg-{{ get_status_color_class(application.status) }} status-badge">
+                    {{ application.status.value.replace('_', ' ').title() }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Company</label>
+                        <p class="mb-0"><strong>{{ application.company }}</strong></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Position</label>
+                        <p class="mb-0"><strong>{{ application.position }}</strong></p>
+                    </div>
+                    
+                    {% if application.location %}
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Location</label>
+                        <p class="mb-0">
+                            <i class="bi bi-geo-alt text-muted me-1"></i>{{ application.location }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if application.salary_range %}
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Salary Range</label>
+                        <p class="mb-0">
+                            <i class="bi bi-currency-dollar text-muted me-1"></i>{{ application.salary_range }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if application.job_url %}
+                    <div class="col-12 mb-3">
+                        <label class="form-label text-muted small">Job Posting</label>
+                        <p class="mb-0">
+                            <a href="{{ application.job_url }}" target="_blank" class="text-decoration-none">
+                                <i class="bi bi-link-45deg me-1"></i>View Original Posting
+                                <i class="bi bi-box-arrow-up-right small ms-1"></i>
+                            </a>
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact Information -->
+        {% if application.contact_person or application.contact_email %}
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white border-0">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person me-2"></i>Contact Information
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if application.contact_person %}
+                <div class="mb-2">
+                    <label class="form-label text-muted small">Contact Person</label>
+                    <p class="mb-0"><strong>{{ application.contact_person }}</strong></p>
+                </div>
+                {% endif %}
+                
+                {% if application.contact_email %}
+                <div class="mb-0">
+                    <label class="form-label text-muted small">Email</label>
+                    <p class="mb-0">
+                        <a href="mailto:{{ application.contact_email }}" class="text-decoration-none">
+                            <i class="bi bi-envelope me-1"></i>{{ application.contact_email }}
+                        </a>
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Notes -->
+        {% if application.notes %}
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white border-0">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-chat-text me-2"></i>Notes
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="notes-content" style="white-space: pre-line; line-height: 1.6;">{{ application.notes }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Timeline -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Timeline
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Application Created</h6>
+                            <small class="text-muted">{{ application.created_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                        </div>
+                    </div>
+                    
+                    {% if application.application_date and application.application_date.date() != application.created_at.date() %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Application Submitted</h6>
+                            <small class="text-muted">{{ application.application_date.strftime('%B %d, %Y') }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if application.updated_at.date() != application.created_at.date() %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-{{ get_status_color_class(application.status) }}"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Status Updated</h6>
+                            <small class="text-muted">
+                                {{ application.updated_at.strftime('%B %d, %Y at %I:%M %p') }}<br>
+                                <span class="badge bg-{{ get_status_color_class(application.status) }} status-badge mt-1">
+                                    {{ application.status.value.replace('_', ' ').title() }}
+                                </span>
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('edit_application', app_id=application.id) }}" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="bi bi-pencil me-1"></i>Edit Application
+                </a>
+                
+                {% if application.job_url %}
+                <a href="{{ application.job_url }}" target="_blank" class="btn btn-outline-info w-100 mb-2">
+                    <i class="bi bi-link-45deg me-1"></i>View Job Posting
+                </a>
+                {% endif %}
+                
+                {% if application.contact_email %}
+                <a href="mailto:{{ application.contact_email }}" class="btn btn-outline-success w-100 mb-2">
+                    <i class="bi bi-envelope me-1"></i>Send Email
+                </a>
+                {% endif %}
+                
+                <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="bi bi-trash me-1"></i>Delete Application
+                </button>
+            </div>
+        </div>
+        
+        <!-- Application Stats -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Application Info
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-primary mb-1">{{ (datetime.now() - application.created_at).days }}</h4>
+                            <small class="text-muted">Days Since Created</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-info mb-1">{{ (datetime.now() - application.updated_at).days }}</h4>
+                        <small class="text-muted">Days Since Updated</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this application?</p>
+                <div class="alert alert-warning">
+                    <strong>{{ application.company }} - {{ application.position }}</strong><br>
+                    This action cannot be undone.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('delete_application', app_id=application.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Delete Application
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 20px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -8px;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-content h6 {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.notes-content {
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 15px;
+    border-radius: 5px;
+    font-size: 0.95rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Additional JavaScript can go here
+</script>
+{% endblock %}

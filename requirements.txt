@@ -1,11 +1,17 @@
 # Py-App-Tracker Requirements
 # 
-# This application uses only Python standard library modules,
-# so no external dependencies are required.
-#
+# Core Application (CLI) - Uses only Python standard library
 # Python version: 3.7+
-#
-# For development and testing, you might want to install:
+
+# Web Interface Dependencies
+Flask>=2.3.0
+Werkzeug>=2.3.0
+
+# Optional: For enhanced web features
+# flask-wtf>=1.0.0  # For form handling and CSRF protection
+# python-dateutil>=2.8.0  # For advanced date parsing
+
+# Development and testing dependencies (optional)
 # pytest>=6.0.0
 # pytest-cov>=2.0.0
 # black>=21.0.0

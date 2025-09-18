@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Search Applications - Py-App-Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 mb-0">
+        <i class="bi bi-search me-2"></i>Search Applications
+    </h1>
+    <a href="{{ url_for('applications') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Applications
+    </a>
+</div>
+
+<!-- Search Form -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-10">
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" class="form-control" name="q" value="{{ query }}" 
+                           placeholder="Search companies, positions, notes, or contact names..." 
+                           autocomplete="off" autofocus>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if query %}
+    {% if results %}
+    <!-- Search Results -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+            <i class="bi bi-list-check me-2"></i>Search Results
+            <span class="badge bg-primary ms-2">{{ results|length }}</span>
+        </h5>
+        <span class="text-muted">
+            Found {{ results|length }} result(s) for "{{ query }}"
+        </span>
+    </div>
+
+    <div class="row">
+        {% for app in results %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card application-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title mb-0">
+                            <a href="{{ url_for('view_application', app_id=app.id) }}" class="text-decoration-none">
+                                <!-- Highlight search term in company name -->
+                                {% if query.lower() in app.company.lower() %}
+                                    {{ app.company | replace(query, '<mark>' + query + '</mark>') | safe }}
+                                {% else %}
+                                    {{ app.company }}
+                                {% endif %}
+                            </a>
+                        </h5>
+                        <span class="badge bg-{{ get_status_color_class(app.status) }} status-badge">
+                            {{ app.status.value.replace('_', ' ').title() }}
+                        </span>
+                    </div>
+                    
+                    <p class="card-text text-muted mb-2">
+                        <i class="bi bi-person-badge me-1"></i>
+                        <!-- Highlight search term in position -->
+                        {% if query.lower() in app.position.lower() %}
+                            {{ app.position | replace(query, '<mark>' + query + '</mark>') | safe }}
+                        {% else %}
+                            {{ app.position }}
+                        {% endif %}
+                    </p>
+                    
+                    {% if app.location %}
+                    <p class="card-text text-muted small mb-2">
+                        <i class="bi bi-geo-alt me-1"></i>{{ app.location }}
+                    </p>
+                    {% endif %}
+                    
+                    {% if app.salary_range %}
+                    <p class="card-text text-muted small mb-2">
+                        <i class="bi bi-currency-dollar me-1"></i>{{ app.salary_range }}
+                    </p>
+                    {% endif %}
+                    
+                    {% if app.contact_person and query.lower() in app.contact_person.lower() %}
+                    <p class="card-text text-muted small mb-2">
+                        <i class="bi bi-person me-1"></i>
+                        Contact: {{ app.contact_person | replace(query, '<mark>' + query + '</mark>') | safe }}
+                    </p>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            <small class="text-muted">
+                                Applied: {{ app.application_date.strftime('%m/%d/%Y') if app.application_date else 'N/A' }}
+                            </small><br>
+                            <small class="text-muted">
+                                Updated: {{ app.updated_at.strftime('%m/%d/%Y') }}
+                            </small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('view_application', app_id=app.id) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ url_for('edit_application', app_id=app.id) }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    {% if app.notes and query.lower() in app.notes.lower() %}
+                    <div class="mt-2 p-2 bg-light rounded">
+                        <small class="text-muted">
+                            <i class="bi bi-chat-text me-1"></i>
+                            <strong>Notes:</strong>
+                            {% set highlighted_notes = app.notes | replace(query, '<mark>' + query + '</mark>') %}
+                            {{ (highlighted_notes[:120] + '...') | safe if highlighted_notes | length > 120 else highlighted_notes | safe }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- No Results -->
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="bi bi-search" style="font-size: 4rem; color: #6c757d;"></i>
+        </div>
+        <h3 class="text-muted mb-3">No applications found</h3>
+        <p class="text-muted mb-4">
+            No applications match your search for "<strong>{{ query }}</strong>"
+        </p>
+        <div>
+            <a href="{{ url_for('search') }}" class="btn btn-primary me-2">
+                <i class="bi bi-arrow-clockwise me-1"></i>Try Another Search
+            </a>
+            <a href="{{ url_for('applications') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-list-ul me-1"></i>View All Applications
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+{% else %}
+<!-- Search Instructions -->
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-search" style="font-size: 3rem; color: #007bff;"></i>
+                </div>
+                <h4 class="mb-3">Search Your Applications</h4>
+                <p class="text-muted mb-4">
+                    Find applications by searching across companies, positions, notes, and contact information.
+                </p>
+                
+                <div class="row text-start">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-lightbulb text-warning me-2"></i>Search Tips:</h6>
+                        <ul class="list-unstyled small text-muted">
+                            <li class="mb-1"><i class="bi bi-check text-success me-1"></i> Search by company name</li>
+                            <li class="mb-1"><i class="bi bi-check text-success me-1"></i> Search by job title or position</li>
+                            <li class="mb-1"><i class="bi bi-check text-success me-1"></i> Search through your notes</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-star text-info me-2"></i>Examples:</h6>
+                        <ul class="list-unstyled small text-muted">
+                            <li class="mb-1"><code>"software engineer"</code></li>
+                            <li class="mb-1"><code>"Google"</code></li>
+                            <li class="mb-1"><code>"interview feedback"</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.application-card {
+    transition: all 0.3s ease;
+}
+
+.application-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+}
+
+mark {
+    background-color: #fff3cd;
+    padding: 0.1em 0.2em;
+    border-radius: 0.2em;
+    font-weight: 600;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.search-highlight {
+    background-color: #fff3cd;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Focus on search input when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="q"]');
+    if (searchInput && !searchInput.value) {
+        searchInput.focus();
+    }
+});
+
+// Handle search form submission
+document.querySelector('form').addEventListener('submit', function(e) {
+    const query = document.querySelector('input[name="q"]').value.trim();
+    if (!query) {
+        e.preventDefault();
+        alert('Please enter a search term.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

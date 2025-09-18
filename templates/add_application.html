@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Add Application - Py-App-Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 mb-0">
+        <i class="bi bi-plus-circle me-2"></i>Add New Application
+    </h1>
+    <a href="{{ url_for('applications') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Applications
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    <div class="row">
+                        <!-- Required Fields -->
+                        <div class="col-md-6 mb-3">
+                            <label for="company" class="form-label">Company <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="company" name="company" required
+                                   value="{{ request.form.get('company', '') }}" placeholder="e.g., Google">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="position" class="form-label">Position <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="position" name="position" required
+                                   value="{{ request.form.get('position', '') }}" placeholder="e.g., Software Engineer">
+                        </div>
+                        
+                        <!-- Status and Date -->
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                {% for status in all_statuses %}
+                                    <option value="{{ status.value }}" 
+                                            {{ 'selected' if request.form.get('status', 'applied') == status.value }}>
+                                        {{ status.value.replace('_', ' ').title() }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="application_date" class="form-label">Application Date</label>
+                            <input type="date" class="form-control" id="application_date" name="application_date"
+                                   value="{{ request.form.get('application_date', '') }}">
+                            <div class="form-text">Leave empty to use today's date</div>
+                        </div>
+                        
+                        <!-- Job Details -->
+                        <div class="col-md-6 mb-3">
+                            <label for="location" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="location" name="location"
+                                   value="{{ request.form.get('location', '') }}" placeholder="e.g., San Francisco, CA">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="salary_range" class="form-label">Salary Range</label>
+                            <input type="text" class="form-control" id="salary_range" name="salary_range"
+                                   value="{{ request.form.get('salary_range', '') }}" placeholder="e.g., $100k-130k">
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <label for="job_url" class="form-label">Job Posting URL</label>
+                            <input type="url" class="form-control" id="job_url" name="job_url"
+                                   value="{{ request.form.get('job_url', '') }}" placeholder="https://...">
+                        </div>
+                        
+                        <!-- Contact Information -->
+                        <div class="col-md-6 mb-3">
+                            <label for="contact_person" class="form-label">Contact Person</label>
+                            <input type="text" class="form-control" id="contact_person" name="contact_person"
+                                   value="{{ request.form.get('contact_person', '') }}" placeholder="e.g., Jane Smith">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="contact_email" class="form-label">Contact Email</label>
+                            <input type="email" class="form-control" id="contact_email" name="contact_email"
+                                   value="{{ request.form.get('contact_email', '') }}" placeholder="jane.smith@company.com">
+                        </div>
+                        
+                        <!-- Notes -->
+                        <div class="col-12 mb-4">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4"
+                                      placeholder="Any additional notes about this application...">{{ request.form.get('notes', '') }}</textarea>
+                            <div class="form-text">Optional: Add any relevant notes about this application</div>
+                        </div>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-plus-circle me-1"></i>Add Application
+                            </button>
+                            <a href="{{ url_for('applications') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x me-1"></i>Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar with tips -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <strong>Company & Position</strong> are required fields
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Use the <strong>Job URL</strong> to quickly reference the original posting
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Add <strong>contact information</strong> to track your networking
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Use <strong>notes</strong> for interview feedback and follow-ups
+                    </li>
+                    <li>
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        You can update the status anytime as your application progresses
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-light border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Status Guide
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <div class="mb-2">
+                        <span class="badge bg-primary status-badge me-2">Applied</span>
+                        Just submitted your application
+                    </div>
+                    <div class="mb-2">
+                        <span class="badge bg-info status-badge me-2">Screening</span>
+                        Initial review or phone screen
+                    </div>
+                    <div class="mb-2">
+                        <span class="badge bg-warning status-badge me-2">Interview Scheduled</span>
+                        Interview is scheduled
+                    </div>
+                    <div class="mb-2">
+                        <span class="badge bg-secondary status-badge me-2">Interviewed</span>
+                        Interview completed, waiting for results
+                    </div>
+                    <div class="mb-2">
+                        <span class="badge bg-success status-badge me-2">Offer Received</span>
+                        You received a job offer
+                    </div>
+                    <div class="mb-2">
+                        <span class="badge bg-success status-badge me-2">Accepted</span>
+                        You accepted the offer
+                    </div>
+                    <div class="mb-2">
+                        <span class="badge bg-danger status-badge me-2">Rejected</span>
+                        Application was declined
+                    </div>
+                    <div>
+                        <span class="badge bg-light text-dark status-badge me-2">Withdrawn</span>
+                        You withdrew your application
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-fill today's date if application date is empty
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('application_date');
+    if (!dateInput.value) {
+        const today = new Date();
+        const todayString = today.getFullYear() + '-' + 
+            String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(today.getDate()).padStart(2, '0');
+        dateInput.value = todayString;
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const company = document.getElementById('company').value.trim();
+    const position = document.getElementById('position').value.trim();
+    
+    if (!company || !position) {
+        e.preventDefault();
+        alert('Company and Position are required fields.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Py-App-Tracker{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <style>
+        .navbar-brand {
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        .card-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .card-stats .card-body {
+            padding: 1.5rem;
+        }
+        
+        .stats-icon {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+        
+        .application-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        
+        .application-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar {
+            background-color: #f8f9fa;
+            min-height: calc(100vh - 76px);
+        }
+        
+        .main-content {
+            min-height: calc(100vh - 76px);
+        }
+        
+        .flash-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            max-width: 400px;
+        }
+        
+        .progress-ring {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+        
+        .footer {
+            background-color: #343a40;
+            color: #adb5bd;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="bi bi-briefcase-fill me-2"></i>Py-App-Tracker
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'index' }}" href="{{ url_for('index') }}">
+                            <i class="bi bi-house me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'applications' }}" href="{{ url_for('applications') }}">
+                            <i class="bi bi-list-ul me-1"></i>Applications
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'add_application' }}" href="{{ url_for('add_application') }}">
+                            <i class="bi bi-plus-circle me-1"></i>Add New
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'analytics' }}" href="{{ url_for('analytics') }}">
+                            <i class="bi bi-graph-up me-1"></i>Analytics
+                        </a>
+                    </li>
+                </ul>
+                
+                <form class="d-flex" method="GET" action="{{ url_for('search') }}">
+                    <input class="form-control me-2" type="search" name="q" placeholder="Search applications..." 
+                           value="{{ request.args.get('q', '') }}" style="width: 200px;">
+                    <button class="btn btn-outline-light" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else (category if category in ['success', 'warning', 'info'] else 'info') }} alert-dismissible fade show" role="alert">
+                        {% if category == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif category == 'error' %}
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% elif category == 'warning' %}
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="row">
+            {% if self.sidebar() %}
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar p-3">
+                    {% block sidebar %}{% endblock %}
+                </div>
+            </div>
+            <div class="col-md-9 col-lg-10">
+                <div class="main-content p-4">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="main-content p-4">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Py-App-Tracker</h6>
+                    <p class="mb-0">A Python-based job application tracker</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('export_data') }}" class="btn btn-outline-light btn-sm me-2">
+                        <i class="bi bi-download me-1"></i>Export Data
+                    </a>
+                    <a href="https://github.com/JonathanPimentelJr/Py-App-Tracker" target="_blank" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-github me-1"></i>GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Auto-dismiss flash messages -->
+    <script>
+        // Auto-dismiss success messages after 5 seconds
+        setTimeout(function() {
+            const successAlerts = document.querySelectorAll('.alert-success');
+            successAlerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+        
+        // Auto-dismiss info messages after 7 seconds
+        setTimeout(function() {
+            const infoAlerts = document.querySelectorAll('.alert-info');
+            infoAlerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 7000);
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
