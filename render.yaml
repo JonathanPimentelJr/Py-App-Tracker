@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: py-app-tracker
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python web_app.py"
+    plan: free
+    environmentVariables:
+      - key: FLASK_ENV
+        value: production
+      - key: PORT
+        value: 10000
