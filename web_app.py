@@ -20,6 +20,7 @@ try:
     from tracker import ApplicationTracker
     from validators import validate_application_data, ValidationError
     from reports import ApplicationReporter
+    from job_api import get_job_service
 except ImportError as e:
     print(f"Error importing modules: {e}")
     print("Make sure you're running from the project root directory")
@@ -171,6 +172,11 @@ def add_application():
                 application_date=application_date
             )
             
+            # Get job posting data if available
+            job_posting_id = request.form.get('job_posting_id', '').strip() or None
+            job_posting_source = request.form.get('job_posting_source', '').strip() or None
+            job_description = request.form.get('job_description', '').strip() or None
+            
             # Create application
             app = Application(
                 company=validated_data['company'],
@@ -182,7 +188,10 @@ def add_application():
                 location=validated_data['location'],
                 notes=validated_data['notes'],
                 contact_person=validated_data['contact_person'],
-                contact_email=validated_data['contact_email']
+                contact_email=validated_data['contact_email'],
+                job_posting_id=job_posting_id,
+                job_posting_source=job_posting_source,
+                job_description=job_description
             )
             
             # Add to tracker
@@ -294,6 +303,70 @@ def search():
     
     return render_template('search.html', query=query, results=results)
 
+@app.route('/jobs')
+def job_search():
+    """Job search page."""
+    query = request.args.get('q', '').strip()
+    location = request.args.get('location', '').strip()
+    jobs = []
+    error_message = None
+    
+    if query:
+        try:
+            job_service = get_job_service()
+            jobs = job_service.search_jobs(query, location, limit=20)
+        except Exception as e:
+            error_message = f'Job search error: {str(e)}'
+            flash(error_message, 'error')
+    
+    return render_template('jobs.html', 
+                         query=query, 
+                         location=location, 
+                         jobs=jobs, 
+                         error_message=error_message)
+
+@app.route('/job/<job_id>')
+def job_details(job_id):
+    """View job details."""
+    try:
+        job_service = get_job_service()
+        job = job_service.get_job_details(job_id)
+        
+        if not job:
+            flash('Job not found', 'error')
+            return redirect(url_for('job_search'))
+        
+        return render_template('job_details.html', job=job)
+        
+    except Exception as e:
+        flash(f'Error loading job details: {str(e)}', 'error')
+        return redirect(url_for('job_search'))
+
+@app.route('/apply-from-job/<job_id>')
+def apply_from_job(job_id):
+    """Apply to a job from job search."""
+    try:
+        job_service = get_job_service()
+        job = job_service.get_job_details(job_id)
+        
+        if not job:
+            flash('Job not found', 'error')
+            return redirect(url_for('job_search'))
+        
+        # Convert job posting to application data
+        app_data = job_service.job_to_application_data(job)
+        app_data['job_description'] = job.description
+        
+        return render_template('add_application.html', 
+                             prefilled_data=app_data, 
+                             from_job_search=True,
+                             job=job,
+                             all_statuses=list(ApplicationStatus))
+        
+    except Exception as e:
+        flash(f'Error applying to job: {str(e)}', 'error')
+        return redirect(url_for('job_search'))
+
 @app.route('/analytics')
 def analytics():
     """Show analytics and reports."""
@@ -328,6 +401,141 @@ def api_summary():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/applications', methods=['GET'])
+def api_applications():
+    """API endpoint to get all applications."""
+    try:
+        applications = [app.to_dict() for app in tracker.applications]
+        return jsonify({'applications': applications})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/applications', methods=['POST'])
+def api_add_application():
+    """API endpoint to add a new application."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
+        
+        # Validate required fields
+        if not data.get('company') or not data.get('position'):
+            return jsonify({'error': 'Company and position are required'}), 400
+        
+        # Create application
+        app = Application(
+            company=data['company'],
+            position=data['position'],
+            status=ApplicationStatus(data.get('status', 'applied')),
+            job_url=data.get('job_url'),
+            salary_range=data.get('salary_range'),
+            location=data.get('location'),
+            notes=data.get('notes'),
+            contact_person=data.get('contact_person'),
+            contact_email=data.get('contact_email'),
+            job_posting_id=data.get('job_posting_id'),
+            job_posting_source=data.get('job_posting_source'),
+            job_description=data.get('job_description')
+        )
+        
+        app_id = tracker.add_application(app)
+        return jsonify({'success': True, 'application_id': app_id}), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/applications/<app_id>', methods=['GET'])
+def api_get_application(app_id):
+    """API endpoint to get a specific application."""
+    try:
+        app = tracker.get_application(app_id)
+        if not app:
+            return jsonify({'error': 'Application not found'}), 404
+        return jsonify(app.to_dict())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/applications/<app_id>', methods=['PUT'])
+def api_update_application(app_id):
+    """API endpoint to update an application."""
+    try:
+        app = tracker.get_application(app_id)
+        if not app:
+            return jsonify({'error': 'Application not found'}), 404
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
+        
+        # Update application
+        updates = {}
+        if 'company' in data:
+            updates['company'] = data['company']
+        if 'position' in data:
+            updates['position'] = data['position']
+        if 'status' in data:
+            updates['status'] = data['status']
+        if 'job_url' in data:
+            updates['job_url'] = data['job_url']
+        if 'salary_range' in data:
+            updates['salary_range'] = data['salary_range']
+        if 'location' in data:
+            updates['location'] = data['location']
+        if 'notes' in data:
+            updates['notes'] = data['notes']
+        if 'contact_person' in data:
+            updates['contact_person'] = data['contact_person']
+        if 'contact_email' in data:
+            updates['contact_email'] = data['contact_email']
+        
+        success = tracker.update_application(app_id, **updates)
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Failed to update application'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/applications/<app_id>', methods=['DELETE'])
+def api_delete_application(app_id):
+    """API endpoint to delete an application."""
+    try:
+        app = tracker.get_application(app_id)
+        if not app:
+            return jsonify({'error': 'Application not found'}), 404
+        
+        success = tracker.delete_application(app_id)
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Failed to delete application'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/jobs/search', methods=['GET'])
+def api_job_search():
+    """API endpoint to search for jobs."""
+    try:
+        query = request.args.get('q', '').strip()
+        location = request.args.get('location', '').strip()
+        limit = int(request.args.get('limit', 10))
+        
+        if not query:
+            return jsonify({'error': 'Query parameter is required'}), 400
+        
+        job_service = get_job_service()
+        jobs = job_service.search_jobs(query, location, limit)
+        
+        return jsonify({
+            'jobs': [job.to_dict() for job in jobs],
+            'count': len(jobs)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/export')
 def export_data():
     """Export applications as JSON."""
@@ -358,5 +566,5 @@ def internal_error(e):
 
 if __name__ == '__main__':
     print("Starting Py-App-Tracker Web Interface...")
-    print("Visit: http://127.0.0.1:5000")
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    print("Visit: http://127.0.0.1:9000")
+    app.run(debug=True, host='127.0.0.1', port=9000)

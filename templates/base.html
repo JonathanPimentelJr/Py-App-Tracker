@@ -106,6 +106,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'job_search' }}" href="{{ url_for('job_search') }}">
+                            <i class="bi bi-search me-1"></i>Find Jobs
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.endpoint == 'add_application' }}" href="{{ url_for('add_application') }}">
                             <i class="bi bi-plus-circle me-1"></i>Add New
                         </a>
@@ -154,24 +159,11 @@
     <!-- Main Content -->
     <div class="container-fluid">
         <div class="row">
-            {% if self.sidebar() %}
-            <div class="col-md-3 col-lg-2 px-0">
-                <div class="sidebar p-3">
-                    {% block sidebar %}{% endblock %}
-                </div>
-            </div>
-            <div class="col-md-9 col-lg-10">
-                <div class="main-content p-4">
-                    {% block content %}{% endblock %}
-                </div>
-            </div>
-            {% else %}
             <div class="col-12">
                 <div class="main-content p-4">
                     {% block content %}{% endblock %}
                 </div>
             </div>
-            {% endif %}
         </div>
     </div>
 

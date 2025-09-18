@@ -37,7 +37,10 @@ class Application:
         notes: Optional[str] = None,
         contact_person: Optional[str] = None,
         contact_email: Optional[str] = None,
-        app_id: Optional[str] = None
+        app_id: Optional[str] = None,
+        job_posting_id: Optional[str] = None,
+        job_posting_source: Optional[str] = None,
+        job_description: Optional[str] = None
     ):
         """
         Initialize a new job application.
@@ -54,6 +57,9 @@ class Application:
             contact_person: Name of contact person
             contact_email: Email of contact person
             app_id: Unique identifier for the application
+            job_posting_id: ID from the job posting source
+            job_posting_source: Source of the job posting (e.g., 'JSearch', 'Manual')
+            job_description: Full job description from the original posting
         """
         self.id = app_id or str(uuid.uuid4())
         self.company = company
@@ -66,6 +72,9 @@ class Application:
         self.notes = notes
         self.contact_person = contact_person
         self.contact_email = contact_email
+        self.job_posting_id = job_posting_id
+        self.job_posting_source = job_posting_source or "Manual"
+        self.job_description = job_description
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
     
@@ -93,6 +102,9 @@ class Application:
             'notes': self.notes,
             'contact_person': self.contact_person,
             'contact_email': self.contact_email,
+            'job_posting_id': self.job_posting_id,
+            'job_posting_source': self.job_posting_source,
+            'job_description': self.job_description,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
@@ -111,7 +123,10 @@ class Application:
             notes=data.get('notes'),
             contact_person=data.get('contact_person'),
             contact_email=data.get('contact_email'),
-            app_id=data['id']
+            app_id=data['id'],
+            job_posting_id=data.get('job_posting_id'),
+            job_posting_source=data.get('job_posting_source'),
+            job_description=data.get('job_description')
         )
         if data.get('created_at'):
             app.created_at = datetime.fromisoformat(data['created_at'])

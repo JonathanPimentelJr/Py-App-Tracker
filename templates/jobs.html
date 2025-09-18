@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Find Jobs - Py-App-Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 mb-0">
+        <i class="bi bi-search me-2"></i>Find Jobs
+    </h1>
+    <a href="{{ url_for('add_application') }}" class="btn btn-outline-primary">
+        <i class="bi bi-plus-circle me-1"></i>Add Manually
+    </a>
+</div>
+
+<!-- Search Form -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('job_search') }}">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="mb-3">
+                                <label for="query" class="form-label">Job Title or Keywords</label>
+                                <input type="text" class="form-control" id="query" name="q" 
+                                       value="{{ query }}" placeholder="e.g., Python Developer, Data Scientist">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="location" class="form-label">Location (Optional)</label>
+                                <input type="text" class="form-control" id="location" name="location" 
+                                       value="{{ location }}" placeholder="e.g., San Francisco, CA">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label d-block">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-search me-1"></i>Search Jobs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Results -->
+{% if query %}
+    {% if error_message %}
+        <div class="alert alert-warning border-0" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ error_message }}
+        </div>
+    {% endif %}
+
+    {% if jobs %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Search Results</h4>
+            <small class="text-muted">Found {{ jobs|length }} jobs</small>
+        </div>
+
+        <div class="row">
+            {% for job in jobs %}
+            <div class="col-12 mb-3">
+                <div class="card border-0 shadow-sm application-card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-1">
+                                    <a href="{{ url_for('job_details', job_id=job.job_id) }}" class="text-decoration-none">
+                                        {{ job.title }}
+                                    </a>
+                                </h5>
+                                <h6 class="text-primary mb-2">{{ job.company }}</h6>
+                                
+                                <div class="d-flex flex-wrap gap-3 mb-2">
+                                    {% if job.location %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-geo-alt me-1"></i>{{ job.location }}
+                                        </small>
+                                    {% endif %}
+                                    
+                                    {% if job.employment_type %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-briefcase me-1"></i>{{ job.employment_type }}
+                                        </small>
+                                    {% endif %}
+                                    
+                                    {% if job.remote %}
+                                        <small class="text-success">
+                                            <i class="bi bi-house me-1"></i>Remote
+                                        </small>
+                                    {% endif %}
+                                    
+                                    {% if job.get_salary_range() %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-currency-dollar me-1"></i>{{ job.get_salary_range() }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="job-description">
+                                    <p class="mb-0 text-muted small">
+                                        {% if job.description|length > 200 %}
+                                            {{ job.description[:200] }}...
+                                        {% else %}
+                                            {{ job.description }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                {% if job.requirements %}
+                                    <div class="mt-2">
+                                        {% for req in job.requirements[:3] %}
+                                            <span class="badge bg-light text-dark me-1">{{ req }}</span>
+                                        {% endfor %}
+                                        {% if job.requirements|length > 3 %}
+                                            <span class="small text-muted">+{{ job.requirements|length - 3 }} more</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="text-end">
+                                    {% if job.posted_date %}
+                                        <small class="text-muted d-block mb-2">
+                                            Posted {{ job.posted_date.strftime('%m/%d/%Y') }}
+                                        </small>
+                                    {% endif %}
+                                    
+                                    <small class="text-muted d-block mb-3">Source: {{ job.source }}</small>
+                                    
+                                    <div class="d-flex flex-column gap-2">
+                                        <a href="{{ url_for('job_details', job_id=job.job_id) }}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-eye me-1"></i>View Details
+                                        </a>
+                                        
+                                        <a href="{{ url_for('apply_from_job', job_id=job.job_id) }}" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="bi bi-plus-circle me-1"></i>Apply & Track
+                                        </a>
+                                        
+                                        {% if job.job_url %}
+                                            <a href="{{ job.job_url }}" target="_blank" 
+                                               class="btn btn-outline-secondary btn-sm">
+                                                <i class="bi bi-box-arrow-up-right me-1"></i>Apply Direct
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-search" style="font-size: 3rem; color: #6c757d;"></i>
+            <h4 class="mt-3 text-muted">No jobs found</h4>
+            <p class="text-muted">Try adjusting your search terms or location.</p>
+        </div>
+    {% endif %}
+{% else %}
+    <!-- Getting Started -->
+    <div class="text-center py-5">
+        <i class="bi bi-search" style="font-size: 4rem; color: #007bff;"></i>
+        <h3 class="mt-3">Find Your Next Opportunity</h3>
+        <p class="text-muted mb-4">Search thousands of job postings and easily add them to your application tracker.</p>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h5>Popular Searches</h5>
+                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                            <a href="{{ url_for('job_search', q='Python Developer') }}" class="btn btn-outline-primary btn-sm">Python Developer</a>
+                            <a href="{{ url_for('job_search', q='Data Scientist') }}" class="btn btn-outline-primary btn-sm">Data Scientist</a>
+                            <a href="{{ url_for('job_search', q='Software Engineer') }}" class="btn btn-outline-primary btn-sm">Software Engineer</a>
+                            <a href="{{ url_for('job_search', q='Full Stack Developer') }}" class="btn btn-outline-primary btn-sm">Full Stack Developer</a>
+                            <a href="{{ url_for('job_search', q='DevOps Engineer') }}" class="btn btn-outline-primary btn-sm">DevOps Engineer</a>
+                            <a href="{{ url_for('job_search', q='Product Manager') }}" class="btn btn-outline-primary btn-sm">Product Manager</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Features Info -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card border-0 bg-primary text-white">
+            <div class="card-body">
+                <h5>🎯 Job Search Features</h5>
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="bi bi-search d-block mb-2" style="font-size: 1.5rem;"></i>
+                            <h6>Smart Search</h6>
+                            <small>Search by keywords, job titles, or skills</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="bi bi-plus-circle d-block mb-2" style="font-size: 1.5rem;"></i>
+                            <h6>One-Click Apply</h6>
+                            <small>Auto-populate applications with job details</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="bi bi-eye d-block mb-2" style="font-size: 1.5rem;"></i>
+                            <h6>Detailed View</h6>
+                            <small>See full job descriptions and requirements</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i class="bi bi-graph-up d-block mb-2" style="font-size: 1.5rem;"></i>
+                            <h6>Track Everything</h6>
+                            <small>Monitor your applications from start to finish</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .application-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    
+    .application-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .job-description {
+        max-height: 60px;
+        overflow: hidden;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Py-App-Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 mb-0">
+        <i class="bi bi-graph-up me-2"></i>Analytics & Reports
+    </h1>
+    <div>
+        <a href="{{ url_for('export_data') }}" class="btn btn-outline-primary">
+            <i class="bi bi-download me-1"></i>Export Data
+        </a>
+    </div>
+</div>
+
+<!-- Response Analysis Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-percent stats-icon d-block mb-2"></i>
+                <h3 class="mb-0">{{ "%.1f"|format(response_analysis.get('response_rate', 0)) }}%</h3>
+                <p class="mb-0">Response Rate</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-chat-dots-fill stats-icon d-block mb-2"></i>
+                <h3 class="mb-0">{{ response_analysis.get('total_responses', 0) }}</h3>
+                <p class="mb-0">Total Responses</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-check-fill stats-icon d-block mb-2"></i>
+                <h3 class="mb-0">{{ response_analysis.get('interview_rate', 0)|round(1) }}%</h3>
+                <p class="mb-0">Interview Rate</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-trophy-fill stats-icon d-block mb-2"></i>
+                <h3 class="mb-0">{{ response_analysis.get('offer_rate', 0)|round(1) }}%</h3>
+                <p class="mb-0">Offer Rate</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Company Statistics -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-building me-2"></i>Top Companies Applied
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if company_stats %}
+                    <div class="list-group list-group-flush">
+                        {% for company in company_stats %}
+                        <div class="list-group-item border-0 px-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ company.company }}</h6>
+                                <small class="text-muted">{{ company.positions|length }} position{{ 's' if company.positions|length != 1 }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary rounded-pill">{{ company.count }}</span>
+                                <div class="small text-muted">
+                                    {{ "%.1f"|format(company.response_rate) }}% response
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-3">No company data available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Weekly Summary -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-calendar3 me-2"></i>Weekly Application Trend
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if weekly_summary %}
+                    <div class="list-group list-group-flush">
+                        {% for week, data in weekly_summary.items() %}
+                        <div class="list-group-item border-0 px-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Week of {{ week }}</h6>
+                                <small class="text-muted">{{ data.total }} applications submitted</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="small">
+                                    <span class="text-success">{{ data.responses }} responses</span>
+                                </div>
+                                <div class="small text-muted">
+                                    {{ "%.1f"|format(data.response_rate) }}% rate
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-3">No weekly data available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stale Applications -->
+{% if stale_apps %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Stale Applications 
+                    <small class="text-muted">(No activity in 30+ days)</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning border-0" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>{{ stale_apps|length }}</strong> applications haven't been updated recently. Consider following up!
+                </div>
+                
+                <div class="row">
+                    {% for app in stale_apps[:8] %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <a href="{{ url_for('view_application', app_id=app.id) }}" class="text-decoration-none">
+                                                {{ app.company }}
+                                            </a>
+                                        </h6>
+                                        <p class="mb-1 small text-muted">{{ app.position }}</p>
+                                        <small class="text-muted">
+                                            Last updated: {{ app.updated_at.strftime('%m/%d/%Y') }}
+                                            ({{ ((app.days_since_update if hasattr(app, 'days_since_update') else 0)) }} days ago)
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-{{ get_status_color_class(app.status) if get_status_color_class else 'secondary' }} status-badge">
+                                        {{ app.status.value.replace('_', ' ').title() if hasattr(app.status, 'value') else app.status }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if stale_apps|length > 8 %}
+                <div class="text-center mt-3">
+                    <p class="text-muted">And {{ stale_apps|length - 8 }} more...</p>
+                    <a href="{{ url_for('applications') }}" class="btn btn-outline-primary btn-sm">
+                        View All Applications
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tips and Insights -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>Insights & Tips
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="me-3">
+                                <i class="bi bi-graph-up text-success" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <h6>Response Rate</h6>
+                                <p class="small text-muted mb-0">
+                                    {% if response_analysis.get('response_rate', 0) > 10 %}
+                                        Great job! Your response rate is above average.
+                                    {% elif response_analysis.get('response_rate', 0) > 5 %}
+                                        Your response rate is decent. Consider improving your application materials.
+                                    {% else %}
+                                        Focus on tailoring your applications to get better response rates.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="me-3">
+                                <i class="bi bi-calendar-check text-info" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <h6>Follow-up</h6>
+                                <p class="small text-muted mb-0">
+                                    {% if stale_apps|length > 0 %}
+                                        You have {{ stale_apps|length }} applications that could use follow-up.
+                                    {% else %}
+                                        You're staying on top of your applications!
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="me-3">
+                                <i class="bi bi-target text-warning" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <h6>Application Volume</h6>
+                                <p class="small text-muted mb-0">
+                                    {% set recent_week_total = weekly_summary.values()|list|first.total if weekly_summary else 0 %}
+                                    {% if recent_week_total > 10 %}
+                                        High application volume - great hustle!
+                                    {% elif recent_week_total > 5 %}
+                                        Good application pace. Keep it up!
+                                    {% else %}
+                                        Consider increasing your application rate.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-icon {
+        font-size: 2rem;
+        opacity: 0.8;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .list-group-item {
+        border-left: none !important;
+        border-right: none !important;
+    }
+    
+    .list-group-item:first-child {
+        border-top: none !important;
+    }
+    
+    .list-group-item:last-child {
+        border-bottom: none !important;
+    }
+</style>
+{% endblock %}
