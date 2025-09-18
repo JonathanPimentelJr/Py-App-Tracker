@@ -1,0 +1,12 @@
+# Py-App-Tracker Requirements
+# 
+# This application uses only Python standard library modules,
+# so no external dependencies are required.
+#
+# Python version: 3.7+
+#
+# For development and testing, you might want to install:
+# pytest>=6.0.0
+# pytest-cov>=2.0.0
+# black>=21.0.0
+# flake8>=4.0.0
