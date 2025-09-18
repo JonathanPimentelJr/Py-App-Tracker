@@ -243,13 +243,22 @@
                             <div>
                                 <h6>Application Volume</h6>
                                 <p class="small text-muted mb-0">
-                                    {% set recent_week_total = weekly_summary.values()|list|first.total if weekly_summary else 0 %}
-                                    {% if recent_week_total > 10 %}
-                                        High application volume - great hustle!
-                                    {% elif recent_week_total > 5 %}
-                                        Good application pace. Keep it up!
+                                    {% if weekly_summary %}
+                                        {% set weekly_values = weekly_summary.values()|list %}
+                                        {% if weekly_values %}
+                                            {% set recent_week_total = weekly_values[0].total %}
+                                            {% if recent_week_total > 10 %}
+                                                High application volume - great hustle!
+                                            {% elif recent_week_total > 5 %}
+                                                Good application pace. Keep it up!
+                                            {% else %}
+                                                Consider increasing your application rate.
+                                            {% endif %}
+                                        {% else %}
+                                            Start applying to more positions to build momentum.
+                                        {% endif %}
                                     {% else %}
-                                        Consider increasing your application rate.
+                                        Start applying to more positions to build momentum.
                                     {% endif %}
                                 </p>
                             </div>

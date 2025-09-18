@@ -375,9 +375,40 @@ def analytics():
         
         # Get various analytics
         response_analysis = reporter.analyze_response_rates()
-        company_stats = reporter.get_company_statistics()[:10]  # Top 10 companies
-        weekly_summary = reporter.generate_weekly_summary(weeks=8)
+        company_stats_raw = reporter.get_company_statistics()[:10]  # Top 10 companies
+        weekly_summary_raw = reporter.generate_weekly_summary(weeks=8)
         stale_apps = reporter.identify_stale_applications(days=30)
+        
+        # Transform company stats from tuples to objects for template
+        company_stats = []
+        for company_name, app_count, status_breakdown in company_stats_raw:
+            # Calculate response rate for this company
+            responded = app_count - status_breakdown.get('applied', 0)
+            response_rate = (responded / app_count * 100) if app_count > 0 else 0
+            
+            company_stats.append({
+                'company': company_name,
+                'count': app_count,
+                'response_rate': response_rate,
+                'status_breakdown': status_breakdown,
+                'positions': [app.position for app in tracker.applications if app.company == company_name]
+            })
+        
+        # Transform weekly summary for template
+        weekly_summary = {}
+        if 'weekly_breakdown' in weekly_summary_raw:
+            for week_key, week_data in weekly_summary_raw['weekly_breakdown'].items():
+                # Calculate response rate for this week
+                week_apps = week_data['applications_count']
+                week_applied = week_data['status_breakdown'].get('applied', 0)
+                week_responded = week_apps - week_applied
+                week_response_rate = (week_responded / week_apps * 100) if week_apps > 0 else 0
+                
+                weekly_summary[week_key] = {
+                    'total': week_apps,
+                    'responses': week_responded,
+                    'response_rate': week_response_rate
+                }
         
         return render_template('analytics.html',
                              response_analysis=response_analysis,

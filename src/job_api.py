@@ -211,12 +211,13 @@ class USAJobsAPI(JobSearchAPI):
     
     def __init__(self, email: Optional[str] = None):
         """Initialize USAJobs API client."""
-        self.email = email or os.getenv('USAJOBS_EMAIL') or "user@example.com"
+        self.email = email or os.getenv('USAJOBS_EMAIL') or "pyapptracker@example.com"
         self.base_url = "https://data.usajobs.gov/api"
+        # USAJobs API requires specific headers
         self.headers = {
-            "User-Agent": f"PyAppTracker/1.0 ({self.email})",
-            "Host": "data.usajobs.gov",
-            "Accept": "application/json"
+            "User-Agent": f"PyAppTracker/1.0 (Contact: {self.email})",
+            "Accept": "application/json",
+            "Content-Type": "application/json"
         }
     
     def search_jobs(self, query: str, location: str = "", limit: int = 10) -> List[JobPosting]:
@@ -584,7 +585,7 @@ class JobAPIService:
             # Initialize APIs in priority order (free first)
             self._initialize_apis(preferred_api)
         
-        self.current_api = self.apis[0] if self.apis else MockJobAPI()
+        self.current_api = self.apis[0] if self.apis else None
     
     def _initialize_apis(self, preferred_api: str):
         """Initialize available APIs in priority order."""
@@ -623,16 +624,24 @@ class JobAPIService:
         
         self.apis = [api for _, api in available_apis]
         
-        # Fallback to mock if no APIs available
+        # Only use mock as absolute last resort
         if not self.apis:
-            logger.warning("No external APIs available, using mock data")
-            self.apis = [MockJobAPI()]
+            logger.warning("No external APIs available, will use mock data only as final fallback")
+            # Don't add MockJobAPI here - let it be added only when absolutely necessary
     
     def search_jobs(self, query: str, location: str = "", limit: int = 10) -> List[JobPosting]:
         """Search for jobs using multiple APIs with fallback."""
         all_jobs = []
+        
+        # If no APIs configured, immediately use mock
+        if not self.apis:
+            logger.warning("No external APIs configured, using mock data")
+            mock_api = MockJobAPI()
+            return mock_api.search_jobs(query, location, limit)
+        
         jobs_per_api = max(1, limit // len(self.apis)) if len(self.apis) > 1 else limit
         
+        # Try each configured API
         for i, api in enumerate(self.apis):
             try:
                 api_name = api.__class__.__name__
@@ -647,19 +656,20 @@ class JobAPIService:
                     if len(all_jobs) >= limit:
                         break
                 else:
-                    logger.warning(f"⚠️ {api_name} returned no jobs")
+                    logger.warning(f"⚠️ {api_name} returned no jobs for query: {query}")
                     
             except Exception as e:
                 api_name = api.__class__.__name__
                 logger.error(f"❌ {api_name} failed: {e}")
                 continue
         
-        # If no external APIs worked, try mock as final fallback
-        if not all_jobs and not isinstance(self.current_api, MockJobAPI):
-            logger.warning("All external APIs failed, falling back to mock data")
+        # Only use mock if absolutely no real results found
+        if not all_jobs:
+            logger.warning(f"All external APIs failed to return jobs for '{query}', using mock data as final fallback")
             mock_api = MockJobAPI()
             try:
                 all_jobs = mock_api.search_jobs(query, location, limit)
+                logger.info(f"📝 Mock API provided {len(all_jobs)} sample jobs")
             except Exception as e:
                 logger.error(f"Even mock API failed: {e}")
                 return []
